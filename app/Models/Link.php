@@ -12,14 +12,27 @@ class Link extends Model
 
     protected $fillable = [
         'user_id',
+        'domain_id',
         'url',
         'is_active',
         'is_follow',
-    ];
+        'http_status',
+        'anchor_text',
+        'link_position',
+        'points_to_correct_domain',
 
+    ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
+
+
+    public function domain(): BelongsTo
+    {
+        return $this->belongsTo(Domain::class);
+    }
+
+
 }
