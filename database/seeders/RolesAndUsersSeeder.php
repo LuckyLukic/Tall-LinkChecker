@@ -29,7 +29,8 @@ class RolesAndUsersSeeder extends Seeder
 
         // Creazione del superadmin
         $superAdmin = User::create([
-            'name' => 'Super Admin',
+            'name' => 'Super',
+            'family_name' => 'Admin',
             'email' => 'superadmin@example.com',
             'password' => bcrypt('password'),
             'phone_number' => fake()->phoneNumber,
@@ -40,7 +41,8 @@ class RolesAndUsersSeeder extends Seeder
         // Creazione degli admin
         for ($i = 1; $i <= 3; $i++) {
             $admin = User::create([
-                'name' => "Admin User $i",
+                'name' => "Admin",
+                'family_name' => "User $i",
                 'email' => "admin$i@example.com",
                 'password' => bcrypt('password'),
                 'phone_number' => fake()->phoneNumber,
@@ -51,16 +53,27 @@ class RolesAndUsersSeeder extends Seeder
 
         // Creazione degli utenti
         for ($i = 1; $i <= 20; $i++) {
-            $user = User::create([
-                'name' => "User $i",
+            $isCompany = rand(0, 1) === 1;
+            $userType = $isCompany ? 'company' : 'individual';
+
+            $user = $userType === 'individual' ? User::create([
+                'name' => fake()->firstName,
+                'family_name' => fake()->lastName,
                 'email' => "user$i@example.com",
-                'password' => bcrypt('password'),
+                'password' => bCrypt('password'),
                 'phone_number' => fake()->phoneNumber,
                 'birthday' => fake()->date('Y-m-d', '2000-01-01'),
-            ]);
+            ]) : User::create([
+                            'company_name' => fake()->company,
+                            'email' => "company$i@example.com",
+                            'password' => bCrypt('password'),
+                            'phone_number' => fake()->phoneNumber,
+                            'birthday' => fake()->date('Y-m-d', '2000-01-01'),
+                        ]);
+
             $user->assignRole('user');
 
-            // Aggiungi indirizzo di registrazione
+            // Add registration address
             $address = Address::create([
                 'street' => fake()->streetAddress,
                 'city' => fake()->city,
@@ -71,9 +84,9 @@ class RolesAndUsersSeeder extends Seeder
 
             $user->update(['address_id' => $address->id]);
 
-            // Creare un secondo indirizzo se necessario
-            $billingAddress = null;
-            if (rand(0, 1)) { // 50% probabilità di avere un indirizzo di fatturazione diverso
+            // Create a billing address if necessary
+            $billingAddress = $address;
+            if (rand(0, 1)) {
                 $billingAddress = Address::create([
                     'street' => fake()->streetAddress,
                     'city' => fake()->city,
@@ -81,11 +94,9 @@ class RolesAndUsersSeeder extends Seeder
                     'postal_code' => fake()->postcode,
                     'country' => fake()->country,
                 ]);
-            } else {
-                $billingAddress = $address;
             }
 
-            // Aggiungi dettagli utente
+            // Add user details
             $type = $i % 2 == 0 ? 'company' : 'individual';
             $fiscal_code = $type == 'individual' ? fake()->phoneNumber() : null;
             $vat_number = $type == 'company' ? 'IT' . str_pad(fake()->numberBetween(1, 99999999999), 11, '0', STR_PAD_LEFT) : null;
@@ -98,7 +109,7 @@ class RolesAndUsersSeeder extends Seeder
                 'billing_address_id' => $billingAddress->id,
             ]);
 
-            // Assegna da 1 a 5 domini per ogni utente
+            // Assign 1 to 5 domains per user
             $numDomains = rand(1, 5);
             for ($j = 1; $j <= $numDomains; $j++) {
                 $domain = Domain::create([
@@ -106,25 +117,24 @@ class RolesAndUsersSeeder extends Seeder
                     'url' => fake()->domainName,
                 ]);
 
-                // Assegna da 1 a 3 link per ogni dominio
+                // Assign 1 to 3 links per domain
                 $numLinks = rand(1, 3);
                 for ($k = 1; $k <= $numLinks; $k++) {
                     Link::create([
                         'domain_id' => $domain->id,
-                        'user_id' => $user->id, // Ensure user_id is set
+                        'user_id' => $user->id,
                         'url' => fake()->url,
                         'is_active' => (bool) rand(0, 1),
                         'is_follow' => (bool) rand(0, 1),
-                        'http_status' => rand(200, 500), // Random HTTP status
-                        'anchor_text' => fake()->sentence(3), // Random anchor text
-                        'link_position' => 'main', // Placeholder for position
-                        'points_to_correct_domain' => (bool) rand(0, 1), // Random domain check
+                        'http_status' => rand(200, 500),
+                        'anchor_text' => fake()->sentence(3),
+                        'link_position' => 'main',
+                        'points_to_correct_domain' => (bool) rand(0, 1),
                     ]);
                 }
             }
         }
     }
-
 }
 
 

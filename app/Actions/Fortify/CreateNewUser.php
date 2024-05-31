@@ -22,10 +22,14 @@ class CreateNewUser implements CreatesNewUsers
     public function create(array $input): User
     {
         Validator::make($input, [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255', 'required_if:user_type,individual'],
+            'family_name' => ['nullable', 'string', 'max:255', 'required_if:user_type,individual'],
+            'company_name' => ['nullable', 'string', 'max:255', 'required_if:user_type,company'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => $this->passwordRules(),
             // 'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
+            'phone_number' => 'required|string|max:20',
+            'birthday' => 'required|date',
             'user_type' => ['required', 'in:individual,company'],
             'fiscal_code' => ['nullable', 'string', 'max:16', 'required_if:user_type,individual'],
             'vat_number' => ['nullable', 'string', 'max:11', 'required_if:user_type,company'],
@@ -48,12 +52,19 @@ class CreateNewUser implements CreatesNewUsers
             'province' => $input['province'],
             'postal_code' => $input['postal_code'],
             'country' => $input['country'],
+
         ]);
 
         $user = User::create([
-            'name' => $input['name'],
+            'name' => $input['user_type'] === 'individual' ? $input['name'] : null,
+            'family_name' => $input['user_type'] === 'individual' ? $input['family_name'] : null,
+            'company_name' => $input['user_type'] === 'company' ? $input['company_name'] : null,
             'email' => $input['email'],
-            'password' => Hash::make($input['password']),
+            'password' => bCrypt($input['password']),
+            'birthday' => $input['birthday'],
+            'phone_number' => $input['phone_number'],
+            'address_id' => $address->id,
+
         ]);
 
         $billingAddress = $address;
