@@ -17,14 +17,13 @@
             <div x-show="userType === 'individual'">
                 <div>
                     <label for="name">Name</label>
-                    <input id="name" type="text" wire:model="name" required autofocus autocomplete="name">
+                    <input id="name" type="text" wire:model="name" autofocus autocomplete="name">
                     @error('name')
                         <span class="error">{{ $message }}</span>
                     @enderror
                 </div>
                 <label for="family_name">Family Name</label>
-                <input id="family_name" type="text" wire:model="family_name" required autofocus
-                    autocomplete="family_name">
+                <input id="family_name" type="text" wire:model="family_name" autofocus autocomplete="family_name">
                 @error('family_name')
                     <span class="error">{{ $message }}</span>
                 @enderror
@@ -35,7 +34,7 @@
 
             <div x-show="userType === 'company'">
                 <label for="company_name">Company Name</label>
-                <input id="company_name" type="text" wire:model="company_name" required>
+                <input id="company_name" type="text" wire:model="company_name">
                 @error('company_name')
                     <span class="error">{{ $message }}</span>
                 @enderror
