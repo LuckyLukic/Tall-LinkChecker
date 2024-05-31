@@ -3,10 +3,12 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Models\Address;
+use App\Models\UserDetail;
+use Laravel\Jetstream\Jetstream;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
-use Laravel\Jetstream\Jetstream;
 
 class CreateNewUser implements CreatesNewUsers
 {
@@ -23,13 +25,58 @@ class CreateNewUser implements CreatesNewUsers
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => $this->passwordRules(),
-            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
+            // 'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
+            'user_type' => ['required', 'in:individual,company'],
+            'fiscal_code' => ['nullable', 'string', 'max:16', 'required_if:user_type,individual'],
+            'vat_number' => ['nullable', 'string', 'max:11', 'required_if:user_type,company'],
+            'street' => ['required', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:255'],
+            'province' => ['required', 'string', 'max:255'],
+            'postal_code' => ['required', 'string', 'max:10'],
+            'country' => ['required', 'string', 'max:255'],
+            'same_address' => ['nullable', 'boolean'],
+            'billing_street' => ['nullable', 'string', 'max:255', 'required_if:same_address,false'],
+            'billing_city' => ['nullable', 'string', 'max:255', 'required_if:same_address,false'],
+            'billing_province' => ['nullable', 'string', 'max:255', 'required_if:same_address,false'],
+            'billing_postal_code' => ['nullable', 'string', 'max:10', 'required_if:same_address,false'],
+            'billing_country' => ['nullable', 'string', 'max:255', 'required_if:same_address,false'],
         ])->validate();
 
-        return User::create([
+        $address = Address::create([
+            'street' => $input['street'],
+            'city' => $input['city'],
+            'province' => $input['province'],
+            'postal_code' => $input['postal_code'],
+            'country' => $input['country'],
+        ]);
+
+        $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
         ]);
+
+        $billingAddress = $address;
+        if (empty($input['same_address'])) {
+            $billingAddress = Address::create([
+                'street' => $input['billing_street'],
+                'city' => $input['billing_city'],
+                'province' => $input['billing_province'],
+                'postal_code' => $input['billing_postal_code'],
+                'country' => $input['billing_country'],
+            ]);
+        }
+
+        UserDetail::create([
+            'user_id' => $user->id,
+            'type' => $input['user_type'],
+            'fiscal_code' => $input['fiscal_code'],
+            'vat_number' => $input['vat_number'],
+            'billing_address_id' => $billingAddress->id,
+        ]);
+        // Assegna il ruolo 'user' all'utente appena registrato
+        $user->assignRole('user');
+
+        return $user;
     }
 }
